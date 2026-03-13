@@ -23,8 +23,8 @@ Cyberpusa follows a Workers-first layered design so every major component runs n
 
 ### 4) CMS Domain Modules
 - `src/modules/content/*`
-- Route + service + schema skeleton for collection/entry operations
-- Current implementation uses in-memory arrays as a temporary scaffold (TODO: D1 repositories)
+- Full CRUD routes, D1-backed service via drizzle-orm, Zod validation schemas
+- `ContentService` receives `D1Database` via constructor injection from route handlers
 
 ## Request Flow
 1. Worker receives request at `fetch`.
@@ -74,8 +74,30 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every PR and push t
 1. `npm run typecheck` — TypeScript strict mode
 2. `npm run test` — Vitest test suite
 
+## Phase 1 — CMS Core MVP
+
+### D1 Persistence
+- Drizzle table definitions in `src/infra/db/schema/index.ts` (collections, entries)
+- `ContentService` uses `drizzle-orm/d1` for all queries
+- Service is instantiated per-request from route handlers via `getD1(c.env)`
+
+### Content Model
+- **Collections**: id, name, slug (globally unique), timestamps
+- **Entries**: id, collectionId, title, slug (unique per collection), body, status, timestamps
+- Status enum: `draft` | `published` | `scheduled`
+
+### Slug Uniqueness
+- Collection slugs: enforced by `UNIQUE` constraint on `collections.slug`
+- Entry slugs: enforced by `UNIQUE INDEX` on `(collection_id, slug)`
+- Both also validated at the service layer before insert/update (belt + suspenders)
+
+### Testing
+- `better-sqlite3` dev dependency provides an in-memory SQLite mock of D1
+- `src/test-utils/mock-d1.ts` wraps better-sqlite3 to match the D1Database interface
+- Tests run through the full HTTP stack via Hono's `app.request()`
+
 ## Next Build Steps
-- Replace in-memory content service with D1 repositories
 - Add auth + RBAC middleware for `/api/admin/*`
 - Implement real Durable Object rate-limiting policy
 - Add queue consumers for publish, webhook, and indexing pipelines
+- Media module (R2 upload + metadata in D1)

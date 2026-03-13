@@ -1,9 +1,14 @@
 import { z } from 'zod';
 
+export const contentStatus = z.enum(['draft', 'published', 'scheduled']);
+export type ContentStatus = z.infer<typeof contentStatus>;
+
 export const collectionSchema = z.object({
   id: z.string(),
   name: z.string(),
-  slug: z.string()
+  slug: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
 export const entrySchema = z.object({
@@ -12,7 +17,9 @@ export const entrySchema = z.object({
   title: z.string(),
   slug: z.string(),
   body: z.string().default(''),
-  status: z.enum(['draft', 'published']).default('draft')
+  status: contentStatus.default('draft'),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
 export type Collection = z.infer<typeof collectionSchema>;

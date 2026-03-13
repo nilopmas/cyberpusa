@@ -98,12 +98,25 @@ Cyberpusa aims to leverage Cloudflare services as first-class building blocks:
 - Scheduled jobs via Cron
 - Optional Workflows for long-running orchestration
 
-## Proposed Route Layout
+## Route Layout
 
-- `GET /api/public/*` — public content read APIs
-- `POST /api/admin/*` — admin content mutations
-- `GET /admin/*` — admin control plane UI
-- `POST /api/system/*` — internal hooks/webhooks/maintenance
+### Public (read-only)
+- `GET /api/public/content/collections` — list collections
+- `GET /api/public/content/collections/:id` — get collection
+- `GET /api/public/content/entries` — list entries (optional `?collectionId` filter)
+- `GET /api/public/content/entries/:id` — get entry
+
+### Admin (mutations)
+- `POST /api/admin/content/collections` — create collection
+- `PUT  /api/admin/content/collections/:id` — update collection
+- `DELETE /api/admin/content/collections/:id` — delete collection
+- `POST /api/admin/content/entries` — create entry
+- `PUT  /api/admin/content/entries/:id` — update entry
+- `DELETE /api/admin/content/entries/:id` — delete entry
+
+### Other
+- `GET /healthz` — health check
+- `GET /admin` — admin control plane placeholder
 
 ## Architecture Direction
 
@@ -116,25 +129,25 @@ Cyberpusa follows a layered architecture:
 
 ## MVP Milestones
 
-### Phase 1 — Foundation
-- Worker app skeleton
-- Env/config validation
-- D1 schema bootstrap
-- Auth + RBAC baseline
+### Phase 0 — Foundation (done)
+- Worker app skeleton, env validation, CI pipeline
+- API envelope, request-id, structured logging
 
-### Phase 2 — CMS Core
-- Collections/content CRUD
-- Draft/publish status
-- Media upload + retrieval
+### Phase 1 — CMS Core MVP (done)
+- D1-backed collections and entries CRUD via drizzle-orm
+- Status lifecycle: draft / published / scheduled
+- Slug uniqueness at DB + service layer
+- 24 tests covering happy paths and key error cases
 
-### Phase 3 — Ops Hardening
-- KV caching
-- DO rate limiting
+### Phase 2 — Ops Hardening
+- Auth + RBAC middleware for `/api/admin/*`
+- KV caching, DO rate limiting
 - Queue consumers + cron jobs
 
-### Phase 4 — Admin Plane
+### Phase 3 — Admin Plane
 - `/admin` control UI in Worker
-- basic content/editor workflow
+- Media upload + retrieval
+- Content editor workflow
 
 ## Why This Project
 
