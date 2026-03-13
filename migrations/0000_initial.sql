@@ -1,0 +1,2 @@
+-- Placeholder for Wrangler D1 migration flow.
+-- Keep this in sync with drizzle/0000_initial.sql until migration pipeline is finalized.

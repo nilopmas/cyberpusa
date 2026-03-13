@@ -1,0 +1,61 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cyberpusa",
+  "main": "src/server.ts",
+  "compatibility_date": "2026-03-13",
+  "workers_dev": true,
+
+  "vars": {
+    "ENVIRONMENT": "development"
+    // "JWT_SECRET": "replace-in-production"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "CMS_DB",
+      "database_name": "cyberpusa",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "cyberpusa-media"
+    }
+  ],
+
+  "kv_namespaces": [
+    {
+      "binding": "CACHE_KV",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ],
+
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "RATE_LIMITER",
+        "class_name": "RateLimiterDO"
+      }
+    ]
+  },
+
+  "queues": {
+    "producers": [
+      {
+        "binding": "CMS_QUEUE",
+        "queue": "cyberpusa-jobs"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "cyberpusa-jobs"
+      }
+    ]
+  }
+
+  // "triggers": {
+  //   "crons": ["*/10 * * * *"]
+  // }
+}

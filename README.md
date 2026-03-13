@@ -5,6 +5,16 @@ Cloudflare-native, headless CMS framework built for the Free Tier era.
 > **Name style:** `Cyberpusa` (lowercase **p**)  
 > Repo: `cyberpusa`
 
+## Quickstart
+
+```bash
+npm install
+npm run dev
+npm run typecheck
+npm run test
+npm run deploy
+```
+
 ## Vision
 
 Cyberpusa is a **Workers-first CMS scaffold/framework** for building content systems that are:
