@@ -14,7 +14,7 @@ export class AppError extends Error {
   }
 }
 
-export function toErrorResponse(error: unknown): Response {
+export function toErrorResponse(error: unknown, requestId?: string): Response {
   if (error instanceof AppError) {
     return json(
       {
@@ -22,8 +22,9 @@ export function toErrorResponse(error: unknown): Response {
         error: {
           code: error.code,
           message: error.message,
-          details: error.details
-        }
+          ...(error.details !== undefined && { details: error.details })
+        },
+        ...(requestId && { meta: { requestId } })
       },
       { status: error.status }
     );
@@ -35,7 +36,8 @@ export function toErrorResponse(error: unknown): Response {
       error: {
         code: 'INTERNAL_ERROR',
         message: 'Unexpected error'
-      }
+      },
+      ...(requestId && { meta: { requestId } })
     },
     { status: 500 }
   );

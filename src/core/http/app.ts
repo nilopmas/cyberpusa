@@ -2,10 +2,16 @@ import { Hono } from 'hono';
 import { parseEnv, type Env } from '../config/env';
 import { AppError, toErrorResponse } from './errors';
 import { ok } from './response';
+import { requestId, type RequestIdVariables } from './request-id';
 import { contentAdminRoutes, contentPublicRoutes } from '../../modules/content/routes';
 
+type AppEnv = { Bindings: Env; Variables: RequestIdVariables };
+
 export function createApp() {
-  const app = new Hono<{ Bindings: Env }>();
+  const app = new Hono<AppEnv>();
+
+  // Request-ID + structured logging (runs first).
+  app.use('*', requestId());
 
   app.use('*', async (c, next) => {
     // Validate shape early so route handlers can trust bindings.
@@ -32,9 +38,11 @@ export function createApp() {
   app.route('/api/public', contentPublicRoutes);
   app.route('/api/admin', contentAdminRoutes);
 
-  app.onError((err) => toErrorResponse(err));
+  app.onError((err, c) => toErrorResponse(err, c.get('requestId')));
 
-  app.notFound(() => toErrorResponse(new AppError('Not Found', { status: 404, code: 'NOT_FOUND' })));
+  app.notFound((c) =>
+    toErrorResponse(new AppError('Not Found', { status: 404, code: 'NOT_FOUND' }), c.get('requestId'))
+  );
 
   return app;
 }
