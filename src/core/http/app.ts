@@ -4,8 +4,11 @@ import { AppError, toErrorResponse } from './errors';
 import { ok } from './response';
 import { requestId, type RequestIdVariables } from './request-id';
 import { contentAdminRoutes, contentPublicRoutes } from '../../modules/content/routes';
+import { authRoutes } from '../../modules/auth/routes';
+import { adminPages } from '../../modules/admin/pages';
+import { requireAuth, requireRole, type AuthVariables } from '../../modules/auth/middleware';
 
-type AppEnv = { Bindings: Env; Variables: RequestIdVariables };
+type AppEnv = { Bindings: Env; Variables: RequestIdVariables & AuthVariables };
 
 export function createApp() {
   const app = new Hono<AppEnv>();
@@ -27,15 +30,18 @@ export function createApp() {
     })
   );
 
-  app.get('/admin', (c) =>
-    ok({
-      area: 'admin-control-plane',
-      message: 'Cyberpusa admin control plane is served directly by Cloudflare Workers.',
-      todo: 'Replace this placeholder with real admin UI routes.'
-    })
-  );
+  // Auth API routes (public — login).
+  app.route('/api/auth', authRoutes);
 
+  // Admin control plane pages (served as HTML by Workers).
+  app.route('/admin', adminPages);
+
+  // Public content API (read-only, no auth).
   app.route('/api/public', contentPublicRoutes);
+
+  // Admin content API — auth + RBAC guard.
+  // owner and admin get full access; editor can mutate content.
+  app.use('/api/admin/*', requireAuth(), requireRole('owner', 'admin', 'editor'));
   app.route('/api/admin', contentAdminRoutes);
 
   app.onError((err, c) => toErrorResponse(err, c.get('requestId')));

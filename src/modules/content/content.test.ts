@@ -1,18 +1,27 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { createApp } from '../../core/http/app';
 import { createMockD1 } from '../../test-utils/mock-d1';
+import { AuthService } from '../auth/service';
 
-function makeEnv(d1?: D1Database) {
+let d1: D1Database;
+
+function makeEnv() {
   return {
     ENVIRONMENT: 'development',
-    CMS_DB: d1 ?? createMockD1(),
+    CMS_DB: d1,
   } as never;
 }
 
+let authToken: string;
+
 function jsonReq(method: string, path: string, body?: unknown) {
+  const isAdmin = path.startsWith('/api/admin');
   return new Request(`http://localhost${path}`, {
     method,
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...(isAdmin && authToken ? { authorization: `Bearer ${authToken}` } : {}),
+    },
     ...(body !== undefined && { body: JSON.stringify(body) }),
   });
 }
@@ -21,9 +30,16 @@ describe('content module', () => {
   let app: ReturnType<typeof createApp>;
   let env: never;
 
-  beforeEach(() => {
-    app = createApp();
+  beforeEach(async () => {
+    d1 = createMockD1();
     env = makeEnv();
+    app = createApp();
+
+    // Create an admin user and get a session token for admin operations.
+    const authSvc = new AuthService(d1);
+    await authSvc.createUser('admin@test.com', 'password123', 'admin');
+    const session = await authSvc.login('admin@test.com', 'password123');
+    authToken = session.token;
   });
 
   // ── Collections ────────────────────────────────────────────

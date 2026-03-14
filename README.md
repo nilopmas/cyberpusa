@@ -106,7 +106,10 @@ Cyberpusa aims to leverage Cloudflare services as first-class building blocks:
 - `GET /api/public/content/entries` — list entries (optional `?collectionId` filter)
 - `GET /api/public/content/entries/:id` — get entry
 
-### Admin (mutations)
+### Auth
+- `POST /api/auth/login` — authenticate and receive session token
+
+### Admin (mutations — requires auth + role: owner | admin | editor)
 - `POST /api/admin/content/collections` — create collection
 - `PUT  /api/admin/content/collections/:id` — update collection
 - `DELETE /api/admin/content/collections/:id` — delete collection
@@ -114,9 +117,12 @@ Cyberpusa aims to leverage Cloudflare services as first-class building blocks:
 - `PUT  /api/admin/content/entries/:id` — update entry
 - `DELETE /api/admin/content/entries/:id` — delete entry
 
+### Admin Control Plane (HTML)
+- `GET /admin/login` — login page
+- `GET /admin/dashboard` — dashboard (requires auth)
+
 ### Other
 - `GET /healthz` — health check
-- `GET /admin` — admin control plane placeholder
 
 ## Architecture Direction
 
@@ -139,13 +145,21 @@ Cyberpusa follows a layered architecture:
 - Slug uniqueness at DB + service layer
 - 24 tests covering happy paths and key error cases
 
-### Phase 2 — Ops Hardening
-- Auth + RBAC middleware for `/api/admin/*`
+### Phase 2 — Auth + Admin Control Plane (done)
+- Session-based auth with PBKDF2 password hashing (Web Crypto API)
+- RBAC with roles: owner | admin | editor | viewer
+- Auth + RBAC middleware protecting `/api/admin/*` routes
+- Login endpoint (`POST /api/auth/login`)
+- Admin control plane pages: login + dashboard (HTML served by Workers)
+- D1 users + sessions tables
+- 15+ auth tests covering login, route protection, role enforcement
+
+### Phase 3 — Ops Hardening
 - KV caching, DO rate limiting
 - Queue consumers + cron jobs
 
-### Phase 3 — Admin Plane
-- `/admin` control UI in Worker
+### Phase 4 — Admin Plane + Media
+- Full `/admin` control UI in Worker
 - Media upload + retrieval
 - Content editor workflow
 

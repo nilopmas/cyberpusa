@@ -33,5 +33,30 @@ export const entries = sqliteTable(
   })
 );
 
+// ── Auth tables ──────────────────────────────────────────────
+
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role', { enum: ['owner', 'admin', 'editor', 'viewer'] })
+    .notNull()
+    .default('viewer'),
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const sessions = sqliteTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id),
+  token: text('token').notNull().unique(),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export type CollectionRow = typeof collections.$inferSelect;
 export type EntryRow = typeof entries.$inferSelect;
+export type UserRow = typeof users.$inferSelect;
+export type SessionRow = typeof sessions.$inferSelect;
