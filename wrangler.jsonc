@@ -53,9 +53,9 @@
         "queue": "cyberpusa-jobs"
       }
     ]
-  }
+  },
 
-  // "triggers": {
-  //   "crons": ["*/10 * * * *"]
-  // }
+  "triggers": {
+    "crons": ["*/10 * * * *", "0 * * * *"]
+  }
 }

@@ -7,6 +7,8 @@ import { contentAdminRoutes, contentPublicRoutes } from '../../modules/content/r
 import { authRoutes } from '../../modules/auth/routes';
 import { adminPages } from '../../modules/admin/pages';
 import { requireAuth, requireRole, type AuthVariables } from '../../modules/auth/middleware';
+import { rateLimit } from '../../infra/rate-limit/rate-limit-middleware';
+import { cacheRead, cacheInvalidate } from '../../infra/cache/cache-middleware';
 
 type AppEnv = { Bindings: Env; Variables: RequestIdVariables & AuthVariables };
 
@@ -30,18 +32,23 @@ export function createApp() {
     })
   );
 
+  // Rate limit auth endpoints.
+  app.use('/api/auth/*', rateLimit({ maxRequests: 10, windowSeconds: 60 }));
+
   // Auth API routes (public — login).
   app.route('/api/auth', authRoutes);
 
   // Admin control plane pages (served as HTML by Workers).
   app.route('/admin', adminPages);
 
-  // Public content API (read-only, no auth).
+  // Public content API — KV read-through cache (5 min TTL).
+  app.use('/api/public/*', cacheRead());
   app.route('/api/public', contentPublicRoutes);
 
-  // Admin content API — auth + RBAC guard.
-  // owner and admin get full access; editor can mutate content.
+  // Admin content API — auth + RBAC guard + cache invalidation.
+  app.use('/api/admin/*', rateLimit({ maxRequests: 60, windowSeconds: 60 }));
   app.use('/api/admin/*', requireAuth(), requireRole('owner', 'admin', 'editor'));
+  app.use('/api/admin/*', cacheInvalidate());
   app.route('/api/admin', contentAdminRoutes);
 
   app.onError((err, c) => toErrorResponse(err, c.get('requestId')));

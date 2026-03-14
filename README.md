@@ -154,9 +154,15 @@ Cyberpusa follows a layered architecture:
 - D1 users + sessions tables
 - 15+ auth tests covering login, route protection, role enforcement
 
-### Phase 3 — Ops Hardening
-- KV caching, DO rate limiting
-- Queue consumers + cron jobs
+### Phase 3 — Ops Hardening (done)
+- KV read-through cache middleware on public content APIs (`x-cache` HIT/MISS headers, 5 min TTL)
+- Cache invalidation on admin content mutations (prefix-based purge)
+- Durable Object rate limiter with sliding window algorithm
+- Rate limit middleware on `/api/auth/*` (10 req/min) and `/api/admin/*` (60 req/min)
+- Queue consumer with routed handlers: `content.published`, `content.unpublished`, `session.cleanup`
+- Cron jobs: expired session cleanup (`*/10 * * * *`), collections cache warm (`0 * * * *`)
+- Tests for KV cache, rate limiter DO, queue dispatcher/handlers, cron scheduled tasks
+- Env bindings: `CACHE_KV`, `RATE_LIMITER`, `CMS_QUEUE` (all optional, graceful degradation)
 
 ### Phase 4 — Admin Plane + Media
 - Full `/admin` control UI in Worker
